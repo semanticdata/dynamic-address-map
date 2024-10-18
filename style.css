@@ -1,0 +1,55 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+}
+
+#map {
+    height: 500px;
+    width: 100%;
+    border-top: 1px solid;
+    border-bottom: 1px solid;
+}
+
+button {
+    padding: 5px;
+    margin: 5px;
+}
+
+body h1 {
+    text-align: center;
+    margin-block: 0.5rem;
+}
+
+.input {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "controls status";
+    gap: 10px;
+}
+
+.controls {
+    margin: 1rem;
+    grid-area: "controls";
+}
+
+.buttons {
+    text-align: right;
+}
+
+.status {
+    border: 1px solid;
+    margin: 1rem;
+    min-width: 10rem;
+    grid-area: "status";
+}
+
+#address-input {
+    height: 7rem;
+    width: 100%;
+}
+
+#status {
+    overflow-y: scroll;
+    max-height: 12rem;
+    margin: 0;
+}
