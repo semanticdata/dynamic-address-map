@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Address Map</title>
+    <meta name="description" content="A simple webapp to dynamically map addresses for visual review.">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #map {
+            width: 100%;
+            border-top: 1px solid;
+            border-bottom: 1px solid;
+            flex: 1;
+
+            flex: 1 1 auto;
+            max-height: 100vh;
+        }
+
+        button {
+            padding: 5px;
+            margin: 5px;
+        }
+
+        body h1 {
+            text-align: center;
+            margin-block: 0.5rem;
+        }
+
+        .input {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-areas: "controls status";
+            gap: 10px;
+
+            flex: 0 0 auto;
+        }
+
+        .controls {
+            margin: 1rem;
+            grid-area: "controls";
+        }
+
+        .buttons {
+            text-align: right;
+        }
+
+        .status {
+            border: 1px solid;
+            margin: 1rem;
+            min-width: 10rem;
+            grid-area: "status";
+        }
+
+        #address-input {
+            height: 7rem;
+            width: 100%;
+        }
+
+        #status {
+            overflow-y: scroll;
+            max-height: 12rem;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Dynamic Address Map</h1>
+
+    <div id="map"></div>
+
+    <div class="input">
+        <div class="controls">
+            <textarea id="address-input" placeholder="Enter multiple addresses (one per line)" rows="5"
+                cols="50"></textarea>
+            <div class="buttons">
+                <button onclick="addAddresses()">Add Addresses</button>
+                <button onclick="resetMap()">Reset Map</button>
+            </div>
+        </div>
+
+        <div class="status">
+            <p id="status"></p>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        // Initialize the map
+        var map = L.map("map").setView([45.02, -93.36], 13);
+
+        // Array to keep track of all markers
+        var markers = [];
+
+        // Add a tile layer (OpenStreetMap)
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap contributors"
+        }).addTo(map);
+
+        // Function to add a marker based on latitude and longitude
+        function addMarker(lat, lng, address) {
+            var marker = L.marker([lat, lng])
+                .addTo(map)
+                .bindPopup(`<strong>${address}</strong>`)
+                .openPopup();
+
+            // Store marker in the array for later removal
+            markers.push(marker);
+        }
+
+        // Function to reset the map by removing all markers
+        function resetMap() {
+            markers.forEach(function (marker) {
+                map.removeLayer(marker);
+            });
+            markers = []; // Clear the array
+            document.getElementById("status").innerText = "";
+        }
+
+        // Function to geocode the address and add it to the map
+        function addAddress() {
+            var address = document.getElementById("address-input").value;
+            if (address === "") {
+                document.getElementById("status").innerText = "Please enter an address.";
+                return;
+            }
+
+            // Use a geocoding service (Nominatim in this case via OpenStreetMap)
+            axios
+                .get(`https://nominatim.openstreetmap.org/search?format=json&q=${address}`)
+                .then(function (response) {
+                    if (response.data.length > 0) {
+                        var lat = response.data[0].lat;
+                        var lng = response.data[0].lon;
+                        addMarker(lat, lng, address);
+                        document.getElementById(
+                            "status"
+                        ).innerText = `Address added: ${address}`;
+                    } else {
+                        document.getElementById("status").innerText = "Address not found.";
+                    }
+                })
+                .catch(function (error) {
+                    document.getElementById("status").innerText = "Error geocoding address.";
+                    console.error(error);
+                });
+        }
+
+        // Function to geocode multiple addresses and add them to the map
+        function addAddresses() {
+            var addresses = document.getElementById("address-input").value.split("\n");
+            var statusElement = document.getElementById("status");
+
+            // Clear status feedback
+            statusElement.innerText = "";
+
+            // Check if the input is empty
+            if (addresses.length === 0 || addresses[0] === "") {
+                statusElement.innerText = "Please enter at least one address.";
+                return;
+            }
+
+            addresses.forEach(function (address) {
+                // Trim whitespace
+                address = address.trim();
+                if (address === "") return;
+
+                // Use a geocoding service (Nominatim)
+                axios
+                    .get(
+                        `https://nominatim.openstreetmap.org/search?format=json&q=${address}`
+                    )
+                    .then(function (response) {
+                        if (response.data.length > 0) {
+                            var lat = response.data[0].lat;
+                            var lng = response.data[0].lon;
+                            addMarker(lat, lng, address);
+                            statusElement.innerText += `✅ Address added: ${address}\n`;
+                        } else {
+                            statusElement.innerText += `❌ Address not found: ${address}\n`;
+                        }
+                    })
+                    .catch(function (error) {
+                        statusElement.innerText += `❌ Error geocoding address: ${address}\n`;
+                        console.error(error);
+                    });
+            });
+
+            // Clear the textarea after processing
+            document.getElementById("address-input").value = "";
+        }
+    </script>
+</body>
+
+</html>
