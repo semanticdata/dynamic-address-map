@@ -23,6 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Rename index.html
+        run: |
+          mv dynamic-address-map.html index.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
