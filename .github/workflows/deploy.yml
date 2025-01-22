@@ -25,7 +25,8 @@ jobs:
 
       - name: Rename index.html
         run: |
-          mv dynamic-address-map.html index.html
+          mkdir dist
+          mv dynamic-address-map.html dist/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -33,7 +34,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: ".dist/"
 
       - name: Deploy to GitHub Pages
         id: deployment
