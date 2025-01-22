@@ -73,6 +73,25 @@
             max-height: 12rem;
             margin: 0;
         }
+
+        .loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        #loading-indicator {
+            display: none;
+            color: #666;
+            margin: 5px;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
     </style>
 </head>
 
@@ -85,9 +104,10 @@
         <div class="controls">
             <textarea id="address-input" placeholder="Enter multiple addresses (one per line)" rows="5"
                 cols="50"></textarea>
+            <div id="loading-indicator">Processing addresses...</div>
             <div class="buttons">
-                <button onclick="addAddresses()">Add Addresses</button>
-                <button onclick="resetMap()">Reset Map</button>
+                <button id="add-button" onclick="addAddresses()">Add Addresses</button>
+                <button id="reset-button" onclick="resetMap()">Reset Map</button>
             </div>
         </div>
 
@@ -117,8 +137,8 @@
                 .bindPopup(`<strong>${address}</strong>`)
                 .openPopup();
 
-            // Store marker in the array for later removal
             markers.push(marker);
+            fitMapToMarkers(); // Fit map after adding marker
         }
 
         // Function to reset the map by removing all markers
@@ -159,48 +179,55 @@
                 });
         }
 
-        // Function to geocode multiple addresses and add them to the map
-        function addAddresses() {
+        // Add this helper function for rate limiting
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Modify the addAddresses function
+        async function addAddresses() {
             var addresses = document.getElementById("address-input").value.split("\n");
             var statusElement = document.getElementById("status");
 
-            // Clear status feedback
             statusElement.innerText = "";
 
-            // Check if the input is empty
             if (addresses.length === 0 || addresses[0] === "") {
                 statusElement.innerText = "Please enter at least one address.";
                 return;
             }
 
-            addresses.forEach(function (address) {
-                // Trim whitespace
-                address = address.trim();
-                if (address === "") return;
+            // Process addresses sequentially with delay
+            for (const address of addresses) {
+                const trimmedAddress = address.trim();
+                if (trimmedAddress === "") continue;
 
-                // Use a geocoding service (Nominatim)
-                axios
-                    .get(
-                        `https://nominatim.openstreetmap.org/search?format=json&q=${address}`
-                    )
-                    .then(function (response) {
-                        if (response.data.length > 0) {
-                            var lat = response.data[0].lat;
-                            var lng = response.data[0].lon;
-                            addMarker(lat, lng, address);
-                            statusElement.innerText += `✅ Address added: ${address}\n`;
-                        } else {
-                            statusElement.innerText += `❌ Address not found: ${address}\n`;
-                        }
-                    })
-                    .catch(function (error) {
-                        statusElement.innerText += `❌ Error geocoding address: ${address}\n`;
-                        console.error(error);
-                    });
-            });
+                try {
+                    await sleep(1000); // Wait 1 second between requests
+                    const response = await axios.get(
+                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmedAddress)}`
+                    );
 
-            // Clear the textarea after processing
-            document.getElementById("address-input").value = "";
+                    if (response.data.length > 0) {
+                        var lat = response.data[0].lat;
+                        var lng = response.data[0].lon;
+                        addMarker(lat, lng, trimmedAddress);
+                        statusElement.innerText += `✅ Address added: ${trimmedAddress}\n`;
+                    } else {
+                        statusElement.innerText += `❌ Address not found: ${trimmedAddress}\n`;
+                    }
+                } catch (error) {
+                    statusElement.innerText += `❌ Error geocoding address: ${trimmedAddress}\n`;
+                    console.error(error);
+                }
+            }
+        }
+
+        // Add this function after the addMarker function
+        function fitMapToMarkers() {
+            if (markers.length === 0) return;
+
+            const group = L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.1));
         }
     </script>
 </body>
