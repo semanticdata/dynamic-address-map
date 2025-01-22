@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rename index.html
+      - name: Rename and move index.html
         run: |
           mkdir dist
           mv dynamic-address-map.html dist/index.html
@@ -34,7 +34,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ".dist/"
+          path: "./dist"
 
       - name: Deploy to GitHub Pages
         id: deployment
