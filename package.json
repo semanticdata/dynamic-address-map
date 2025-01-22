@@ -1,0 +1,17 @@
+{
+    "name": "dynamic-address-map",
+    "version": "1.0.0",
+    "description": "A simple webapp to dynamically map addresses for visual review",
+    "main": "index.js",
+    "scripts": {
+        "test": "jest",
+        "test:watch": "jest --watch"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "jest-environment-jsdom": "^29.7.0"
+    },
+    "dependencies": {
+        "axios": "^1.6.7"
+    }
+} 
